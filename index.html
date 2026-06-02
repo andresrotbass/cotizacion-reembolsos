@@ -149,7 +149,7 @@ const CONFIG = {
     symbol: '$',
     locale: 'es-MX',
     decimals: 2,
-    hint: 'Valor de compra de <a href="https://www.eldolar.info/es-MX/mexico/dia/hoy" target="_blank">eldolar.info</a>'
+    hint: 'Buscá "Compra" en <a href="https://www.eldolar.info/es-MX/mexico/dia/hoy" target="_blank">eldolar.info</a>'
   }
 };
 
@@ -245,32 +245,13 @@ async function fetchMXN() {
   addLog('Despertando servidor... puede tardar unos segundos ☕');
   const FUENTES = [
     {
-      nombre: 'teb-api (eldolar.info)',
+      nombre: 'eldolar.info (compra)',
       fn: async () => {
-        const r = await fetch('https://teb-api.vercel.app/api/cotizacion-mx', { signal: AbortSignal.timeout(15000) });
+        const r = await fetch('/api/cotizacion-mx', { signal: AbortSignal.timeout(15000) });
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const d = await r.json();
-        const val = d.compra || d.venta;
-        if (d.ok && val) return val;
-        throw new Error(d.error || 'Sin valor');
-      }
-    },
-    {
-      nombre: 'open.er-api.com',
-      fn: async () => {
-        const r = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(7000) });
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const d = await r.json();
-        return d.rates.MXN;
-      }
-    },
-    {
-      nombre: 'api.frankfurter.app',
-      fn: async () => {
-        const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN', { signal: AbortSignal.timeout(7000) });
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const d = await r.json();
-        return d.rates.MXN;
+        if (d.ok && d.compra) return d.compra;
+        throw new Error(d.error || 'Sin valor de compra');
       }
     }
   ];
@@ -288,7 +269,7 @@ async function fetchMXN() {
       addLog('✗ ' + (e.name === 'AbortError' ? 'Tiempo agotado' : e.message) + ' — ' + f.nombre, 'err');
     }
   }
-  addLog('Sin conexión. Ingresá el valor manualmente.', 'err');
+  addLog('El valor de compra MXN no está disponible automáticamente. Ingresalo manualmente desde eldolar.info.', 'err');
   endLoad(true);
 }
 
