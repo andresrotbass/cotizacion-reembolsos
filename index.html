@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reembolsos — TEB</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f4f0; --surface: #ffffff; --border: #e2e0d8; --border-strong: #c8c6bc;
+  --text: #1a1917; --text-muted: #6b6960; --text-faint: #a8a69e;
+  --green: #1a6b45; --green-bg: #e8f5ee; --red: #8b2020; --red-bg: #fdeaea;
+  --accent: #1a1917; --radius: 12px; --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem; }
+.container { max-width: 560px; margin: 0 auto; }
+header { margin-bottom: 2rem; }
+header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+header p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+.card-title { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 1rem; }
+.field { margin-bottom: 12px; }
+.field:last-child { margin-bottom: 0; }
+.field label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; }
+input[type=number], input[type=text] { width: 100%; padding: 10px 12px; font-size: 15px; font-family: inherit; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); outline: none; transition: border-color .15s; }
+input:focus { border-color: var(--accent); background: #fff; }
+.hint { font-size: 11px; color: var(--text-faint); margin-top: 5px; }
+.hint a { color: var(--text-muted); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+.metric { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
+.metric-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+.metric-value { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; font-family: 'DM Mono', monospace; }
+.metric-sub { font-size: 11px; color: var(--text-faint); margin-top: 3px; }
+.btn { width: 100%; padding: 11px 16px; font-size: 14px; font-weight: 500; font-family: inherit; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.btn:hover { background: var(--bg); }
+.btn:active { transform: scale(.99); }
+.btn-dark { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-dark:hover { opacity: .88; background: var(--accent); }
+.btn-row { display: flex; gap: 8px; }
+.btn-seg { flex: 1; padding: 10px; font-size: 14px; font-weight: 500; font-family: inherit; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); cursor: pointer; transition: all .15s; }
+.btn-seg:hover { border-color: var(--border-strong); background: var(--bg); }
+.btn-seg.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.log { font-size: 12px; margin-top: 8px; line-height: 1.7; }
+.log-ok { color: var(--green); }
+.log-err { color: var(--red); }
+.spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--text); border-radius: 50%; animation: spin .6s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.msg-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; font-size: 14px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; color: var(--text); font-family: inherit; }
+.hidden { display: none; }
+.copy-ok { text-align: center; font-size: 12px; color: var(--green); margin-top: 6px; display: none; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Calculadora de Reembolsos</h1>
+    <p>TEB — Valor de compra, sin comisión</p>
+  </header>
+
+  <div class="card">
+    <div class="card-title">Datos del reembolso</div>
+    <div class="field">
+      <label>Nombre de la persona</label>
+      <input type="text" id="nombre" placeholder="" oninput="calcular()" />
+    </div>
+    <div class="field">
+      <label>Monto en USD</label>
+      <input type="number" id="monto-usd" placeholder="" min="0" step="0.01" oninput="calcular()" />
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label>Moneda del reembolso</label>
+      <div class="btn-row" style="margin-top:6px">
+        <button class="btn-seg active" id="btn-ars" onclick="seleccionarMoneda('ars')">🇦🇷 Pesos argentinos</button>
+        <button class="btn-seg" id="btn-mxn" onclick="seleccionarMoneda('mxn')">🇲🇽 Pesos mexicanos</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="rate-title">Cotización — Argentina (compra)</div>
+    <div class="grid2">
+      <div class="metric">
+        <div class="metric-label" id="lbl-raw">Dólar blue compra</div>
+        <div class="metric-value" id="rate-valor">—</div>
+        <div class="metric-sub" id="rate-sub">Sin datos</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Tipo de cambio</div>
+        <div class="metric-value" id="rate-aplicado">—</div>
+        <div class="metric-sub">Sin comisión</div>
+      </div>
+    </div>
+    <button class="btn" id="btn-auto" onclick="fetchRate()">
+      <span class="spinner" id="spinner" style="display:none"></span>
+      <span id="btn-txt">Obtener cotización automática</span>
+    </button>
+    <div class="log" id="api-log"></div>
+    <div class="divider"></div>
+    <div class="field" style="margin-bottom:0">
+      <label>O ingresá el valor manualmente</label>
+      <input type="number" id="rate-manual" placeholder="" step="0.01" oninput="setManual()" />
+      <p class="hint" id="rate-hint">Valor de compra de <a href="https://dolarhoy.com" target="_blank">dolarhoy.com</a></p>
+    </div>
+  </div>
+
+  <div class="card hidden" id="resultado-card">
+    <div class="card-title">Resultado</div>
+    <div class="grid2" style="margin-bottom:0">
+      <div class="metric">
+        <div class="metric-label">Monto USD</div>
+        <div class="metric-value" id="res-usd">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label" id="res-label">Total en ARS</div>
+        <div class="metric-value" id="res-total">—</div>
+        <div class="metric-sub" id="res-calculo"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="msg-card">
+    <div class="card-title">Mensaje para WhatsApp</div>
+    <div class="msg-box" id="msg-texto"></div>
+    <button class="btn btn-dark" style="margin-top:10px" onclick="copiar()">Copiar mensaje</button>
+    <p class="copy-ok" id="copy-ok">¡Copiado al portapapeles!</p>
+  </div>
+</div>
+
+<script>
+let moneda = 'ars';
+let rateCompra = null;
+
+const CONFIG = {
+  ars: {
+    title: 'Cotización — Argentina (compra)',
+    rawLabel: 'Dólar blue compra',
+    currency: 'ARS',
+    symbol: '$',
+    locale: 'es-AR',
+    decimals: 0,
+    hint: 'Valor de compra de <a href="https://dolarhoy.com" target="_blank">dolarhoy.com</a>'
+  },
+  mxn: {
+    title: 'Cotización — México (compra)',
+    rawLabel: 'Dólar compra (MXN)',
+    currency: 'MXN',
+    symbol: '$',
+    locale: 'es-MX',
+    decimals: 2,
+    hint: 'Valor de compra de <a href="https://www.eldolar.info/es-MX/mexico/dia/hoy" target="_blank">eldolar.info</a>'
+  }
+};
+
+function seleccionarMoneda(m) {
+  moneda = m;
+  rateCompra = null;
+  document.querySelectorAll('.btn-seg').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + m).classList.add('active');
+  const c = CONFIG[m];
+  document.getElementById('rate-title').textContent = c.title;
+  document.getElementById('lbl-raw').textContent = c.rawLabel;
+  document.getElementById('rate-hint').innerHTML = c.hint;
+  document.getElementById('rate-valor').textContent = '—';
+  document.getElementById('rate-aplicado').textContent = '—';
+  document.getElementById('rate-sub').textContent = 'Sin datos';
+  document.getElementById('api-log').innerHTML = '';
+  document.getElementById('rate-manual').value = '';
+  document.getElementById('resultado-card').classList.add('hidden');
+  document.getElementById('msg-card').classList.add('hidden');
+  fetchRate();
+}
+
+function fetchRate() {
+  if (moneda === 'ars') fetchARS();
+  else fetchMXN();
+}
+
+function addLog(msg, cls) {
+  const el = document.getElementById('api-log');
+  const d = document.createElement('div');
+  if (cls) d.className = 'log-' + cls;
+  d.textContent = msg;
+  el.appendChild(d);
+}
+
+function clearLog() { document.getElementById('api-log').innerHTML = ''; }
+
+function startLoad() {
+  document.getElementById('btn-auto').disabled = true;
+  document.getElementById('spinner').style.display = 'inline-block';
+  document.getElementById('btn-txt').textContent = 'Consultando...';
+  clearLog();
+}
+
+function endLoad(retry) {
+  document.getElementById('btn-auto').disabled = false;
+  document.getElementById('spinner').style.display = 'none';
+  document.getElementById('btn-txt').textContent = retry ? 'Reintentar' : 'Actualizar cotización';
+}
+
+async function fetchARS() {
+  startLoad();
+  const FUENTES = [
+    {
+      nombre: 'dolarapi.com',
+      fn: async () => {
+        const r = await fetch('https://dolarapi.com/v1/dolares/blue', { signal: AbortSignal.timeout(7000) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        return d.compra;
+      }
+    },
+    {
+      nombre: 'bluelytics.com.ar',
+      fn: async () => {
+        const r = await fetch('https://api.bluelytics.com.ar/v2/latest', { signal: AbortSignal.timeout(7000) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        return d.blue.value_buy;
+      }
+    }
+  ];
+  for (const f of FUENTES) {
+    addLog('Probando ' + f.nombre + '...');
+    try {
+      const val = await f.fn();
+      if (val && val > 50) {
+        addLog('✓ OK — ' + f.nombre, 'ok');
+        setRate(Math.round(val));
+        endLoad(false);
+        return;
+      } else throw new Error('Valor inválido');
+    } catch(e) {
+      addLog('✗ ' + e.message + ' — ' + f.nombre, 'err');
+    }
+  }
+  addLog('Sin conexión. Ingresá el valor manualmente.', 'err');
+  endLoad(true);
+}
+
+async function fetchMXN() {
+  startLoad();
+  addLog('Despertando servidor... puede tardar unos segundos ☕');
+  const FUENTES = [
+    {
+      nombre: 'teb-api (eldolar.info)',
+      fn: async () => {
+        const r = await fetch('https://teb-api.vercel.app/api/cotizacion-mx', { signal: AbortSignal.timeout(15000) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        const val = d.compra || d.venta;
+        if (d.ok && val) return val;
+        throw new Error(d.error || 'Sin valor');
+      }
+    },
+    {
+      nombre: 'open.er-api.com',
+      fn: async () => {
+        const r = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(7000) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        return d.rates.MXN;
+      }
+    },
+    {
+      nombre: 'api.frankfurter.app',
+      fn: async () => {
+        const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN', { signal: AbortSignal.timeout(7000) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        return d.rates.MXN;
+      }
+    }
+  ];
+  for (const f of FUENTES) {
+    addLog('Probando ' + f.nombre + '...');
+    try {
+      const val = await f.fn();
+      if (val && val > 5) {
+        addLog('✓ OK — ' + f.nombre, 'ok');
+        setRate(parseFloat(val.toFixed(4)));
+        endLoad(false);
+        return;
+      } else throw new Error('Valor inválido');
+    } catch(e) {
+      addLog('✗ ' + (e.name === 'AbortError' ? 'Tiempo agotado' : e.message) + ' — ' + f.nombre, 'err');
+    }
+  }
+  addLog('Sin conexión. Ingresá el valor manualmente.', 'err');
+  endLoad(true);
+}
+
+function setRate(val) {
+  rateCompra = val;
+  const c = CONFIG[moneda];
+  const fmt = val.toLocaleString(c.locale, { minimumFractionDigits: c.decimals, maximumFractionDigits: c.decimals });
+  document.getElementById('rate-valor').textContent = fmt;
+  document.getElementById('rate-aplicado').textContent = fmt;
+  document.getElementById('rate-sub').textContent = 'Valor de compra';
+  calcular();
+}
+
+function setManual() {
+  const v = parseFloat(document.getElementById('rate-manual').value);
+  if (!isNaN(v) && v > 0) {
+    clearLog();
+    addLog('✓ Valor ingresado manualmente', 'ok');
+    setRate(v);
+  }
+}
+
+function calcular() {
+  const nombre = document.getElementById('nombre').value.trim();
+  const usd = parseFloat(document.getElementById('monto-usd').value);
+  if (!nombre || isNaN(usd) || usd <= 0 || !rateCompra) {
+    document.getElementById('resultado-card').classList.add('hidden');
+    document.getElementById('msg-card').classList.add('hidden');
+    return;
+  }
+  const c = CONFIG[moneda];
+  const total = usd * rateCompra;
+  const totalFmt = total.toLocaleString(c.locale, { minimumFractionDigits: c.decimals, maximumFractionDigits: c.decimals });
+  const rateFmt = rateCompra.toLocaleString(c.locale, { minimumFractionDigits: c.decimals, maximumFractionDigits: c.decimals });
+
+  document.getElementById('res-usd').textContent = 'USD ' + usd.toLocaleString(c.locale);
+  document.getElementById('res-label').textContent = 'Total en ' + c.currency;
+  document.getElementById('res-total').textContent = c.symbol + totalFmt;
+  document.getElementById('res-calculo').textContent = 'USD ' + usd + ' × ' + c.symbol + rateFmt;
+  document.getElementById('resultado-card').classList.remove('hidden');
+
+  document.getElementById('msg-texto').textContent =
+`${nombre}, el monto para tu reembolso será de ${c.symbol}${totalFmt} ${c.currency}. 🙏`;
+
+  document.getElementById('msg-card').classList.remove('hidden');
+}
+
+function copiar() {
+  navigator.clipboard.writeText(document.getElementById('msg-texto').textContent).then(() => {
+    const ok = document.getElementById('copy-ok');
+    ok.style.display = 'block';
+    setTimeout(() => ok.style.display = 'none', 2500);
+  });
+}
+
+fetchRate();
+</script>
+</body>
+</html>
