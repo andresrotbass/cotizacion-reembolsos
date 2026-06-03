@@ -121,9 +121,17 @@ input:focus { border-color: var(--accent); background: #fff; }
   </div>
 
   <div class="card hidden" id="msg-card">
+    <div class="card-title">Monto a transferir</div>
+    <div style="text-align:center; padding: 16px 0 8px;">
+      <div style="font-size:38px; font-weight:600; letter-spacing:-1px; font-family:'DM Mono',monospace;" id="monto-grande">—</div>
+      <div style="font-size:13px; color:var(--text-muted); margin-top:4px;" id="monto-moneda"></div>
+    </div>
+    <button class="btn btn-dark" onclick="copiarMonto()" id="btn-copiar-monto">Copiar monto</button>
+    <p class="copy-ok" id="copy-ok-monto">¡Monto copiado!</p>
+    <div class="divider"></div>
     <div class="card-title">Mensaje para WhatsApp</div>
     <div class="msg-box" id="msg-texto"></div>
-    <button class="btn btn-dark" style="margin-top:10px" onclick="copiar()">Copiar mensaje</button>
+    <button class="btn" style="margin-top:10px" onclick="copiar()">Copiar mensaje</button>
     <p class="copy-ok" id="copy-ok">¡Copiado al portapapeles!</p>
   </div>
 </div>
@@ -324,8 +332,15 @@ function calcular() {
   document.getElementById('res-calculo').textContent = 'USD ' + usd + ' × ' + c.symbol + rateFmt;
   document.getElementById('resultado-card').classList.remove('hidden');
 
+  document.getElementById('monto-grande').textContent = c.symbol + totalFmt;
+  document.getElementById('monto-moneda').textContent = c.currency;
+
   document.getElementById('msg-texto').textContent =
-`${nombre}, el monto para tu reembolso será de ${c.symbol}${totalFmt} ${c.currency}. 🙏`;
+`${nombre}, el monto para tu reembolso será de ${c.symbol}${totalFmt} ${c.currency}.
+
+Valor en USD: ${usd.toLocaleString(c.locale)}
+Cotización: ${c.symbol}${rateFmt} por USD
+Total a transferir: ${c.symbol}${totalFmt} ${c.currency}`;
 
   document.getElementById('msg-card').classList.remove('hidden');
 }
@@ -333,6 +348,15 @@ function calcular() {
 function copiar() {
   navigator.clipboard.writeText(document.getElementById('msg-texto').textContent).then(() => {
     const ok = document.getElementById('copy-ok');
+    ok.style.display = 'block';
+    setTimeout(() => ok.style.display = 'none', 2500);
+  });
+}
+
+function copiarMonto() {
+  const texto = document.getElementById('monto-grande').textContent;
+  navigator.clipboard.writeText(texto).then(() => {
+    const ok = document.getElementById('copy-ok-monto');
     ok.style.display = 'block';
     setTimeout(() => ok.style.display = 'none', 2500);
   });
